@@ -1,16 +1,16 @@
 import { TerraformStack } from "cdktf";
-import { EcsCluster, EcsClusterCapacityProviders } from "@cdktf/provider-aws/lib/ecs";
 import { IamRole, IamRolePolicy } from "../../../../.gen/providers/aws/iam";
 import { CloudwatchLogGroup } from "../../../../.gen/providers/aws/cloudwatch";
-import { EcsService, EcsTaskDefinition } from "../../../../.gen/providers/aws/ecs";
+import { EcsService, EcsTaskDefinition, EcsCluster, EcsClusterCapacityProviders } from "../../../../.gen/providers/aws/ecs";
+import { IContainerConfig } from "../container";
 
 export class AWSCluster  {
     public id: string = '';
 
-    constructor(private stack: TerraformStack, private name: string) {
+    constructor(private stack: TerraformStack, private name: string, private config: IContainerConfig) {
         const cluster = new EcsCluster(stack, name, {
             name,
-            tags: {} // TODO how does this get passed in?
+            tags: this.config.aws!.tags
         });
         this.id = cluster.id; // TODO we will ultimately need more info...
 
@@ -33,27 +33,27 @@ export class AWSCluster  {
     createTaskDefinition(executionRole: IamRole, taskRole: IamRole, logGroup: CloudwatchLogGroup): EcsTaskDefinition {
         return new EcsTaskDefinition(this.stack, `${this.name}-task-definition`, {
             tags: {},
-            cpu: "256",
-            memory: "512",
+            cpu: `${this.config.aws!.container.cpu}`,
+            memory: `${this.config.aws!.container.memory}`,
             requiresCompatibilities: ["EC2", "FARGATE"],
             networkMode: "awsvpc",
             executionRoleArn: executionRole.arn,
             taskRoleArn: taskRole.arn,
             containerDefinitions: JSON.stringify([{
                 name: `${this.name}-task-definition`,
-                image: "351312122817.dkr.ecr.eu-west-2.amazonaws.com/httpd:latest",
-                cpu: 256,
-                memory: 512,
-                environment: [{ name: 'foo', value: 'bar' }],
+                image: this.config.image,
+                cpu: this.config.aws!.container.cpu,
+                memory: this.config.aws!.container.memory,
+                environment: this.config.aws!.container.environment,
                 portMappings: [{
-                    containerPort: 80,
-                    hostPort: 80
+                    containerPort: this.config.aws!.container.port,
+                    hostPort: this.config.aws!.container.port
                 }],
                 logConfiguration:{
                     logDriver: "awslogs",
                     options: {
                         "awslogs-group": logGroup.name,
-                        "awslogs-region": 'eu-west-2', // TODO
+                        "awslogs-region": this.config.aws!.region,
                         "awslogs-stream-prefix": this.name
                     }
                 }
@@ -68,18 +68,12 @@ export class AWSCluster  {
             name: `${this.name}-ecs-service`,
             launchType: "FARGATE",
             cluster: cluster.id,
-            desiredCount: 1,
+            desiredCount: this.config.aws!.container.count,
             taskDefinition: task.arn,
             networkConfiguration: {
-                subnets: [
-                    "subnet-a38972d8",
-                    "subnet-92776ad8",
-                    "subnet-abb676c2"
-                ],
+                subnets: this.config.aws!.network.subnets,
                 assignPublicIp: true,
-                securityGroups: [
-                    "sg-cb66cfa2"
-                ]
+                securityGroups: this.config.aws!.network.securityGroups
             }
         });
     }

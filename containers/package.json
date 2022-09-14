@@ -15,8 +15,8 @@
     "test:watch": "jest --watch",
     "upgrade": "npm i cdktf@latest cdktf-cli@latest",
     "upgrade:next": "npm i cdktf@next cdktf-cli@next",
-    "apply": "cdktf synth; echo \"Please see contents of .cdktf.out directoory for synth output.\"",
-    "deploy": "cdktf deploy",
+    "plan": "TF_LOG=INFO cdktf synth; echo \"Please see contents of .cdktf.out directoory for synth output.\"",
+    "apply": "cdktf deploy",
     "destroy": "cdktf destroy"
   },
   "engines": {

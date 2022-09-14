@@ -7,7 +7,7 @@ import {
 import { AgnosticResource } from "./AgnosticResource";
 import { TerraformProvider  } from "cdktf";
 
-type ProviderConfig = AwsProviderConfig | AzurermProviderConfig;
+export type ProviderConfig = AwsProviderConfig | AzurermProviderConfig;
 
 export class Provider extends AgnosticResource {
   constructor(private name: string, private config: ProviderConfig) {
@@ -23,6 +23,7 @@ export class Provider extends AgnosticResource {
   }
 
   buildAzure(stack: TerraformStack): AzurermProvider {
+    console.info('Build Azure Provider');
     return new AzurermProvider(
         stack,
         this.name,
