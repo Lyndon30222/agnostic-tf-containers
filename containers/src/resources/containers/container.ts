@@ -26,7 +26,7 @@ export interface IContainerConfig {
     image: string;
 }
 
-export class Container extends AgnosticResource {
+export class Container extends AgnosticResource<{ id: string }> {
     constructor(private name: string, private config: IContainerConfig) {
         super();
     }
@@ -40,16 +40,5 @@ export class Container extends AgnosticResource {
         console.info('Build Azure Container Stack');
         const { id } = new AzureContainers(stack, this.name, this.config);
         return { id };
-    }
-
-    build(stack: TerraformStack): { id: string } {
-        const { PROVIDER } = process.env;
-        if(PROVIDER === 'aws') {
-            return this.buildAWS(stack);
-        } else if (PROVIDER === "azure") {
-            return this.buildAzure(stack);
-        }
-
-        throw new Error(`Unknown provider:  ${PROVIDER} - unable to create container stack`);
     }
 }

@@ -9,7 +9,7 @@ import { TerraformProvider  } from "cdktf";
 
 export type ProviderConfig = AwsProviderConfig | AzurermProviderConfig;
 
-export class Provider extends AgnosticResource {
+export class Provider extends AgnosticResource<TerraformProvider> {
   constructor(private name: string, private config: ProviderConfig) {
     super();
   }
@@ -29,17 +29,5 @@ export class Provider extends AgnosticResource {
         this.name,
         this.config as AzurermProviderConfig
       );
-  }
-
-  build(stack: TerraformStack): TerraformProvider {
-    const { PROVIDER } = process.env;
-
-    if (PROVIDER === "aws") {
-      return this.buildAWS(stack);
-    } else if (PROVIDER === "azure") {
-      return this.buildAzure(stack);
-    }
-    
-    throw new Error(`Unknown provider:  ${PROVIDER} - unable to create provider`);
   }
 }
